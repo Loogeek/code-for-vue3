@@ -1,0 +1,69 @@
+<body></body>
+
+<script>
+  function renderer(vnode, container) {
+    if (typeof vnode.tag === "string") {
+      // 说明 vnode 描述的是标签元素
+      mountElement(vnode, container);
+    } else if (typeof vnode.tag === "object") {
+      // 说明 vnode 描述的是组件
+      mountComponent(vnode, container);
+    }
+  }
+
+  function mountElement(vnode, container) {
+    const { tag, props, children } = vnode;
+
+    const el = document.createElement(tag);
+    for (let key in props) {
+      if (/^on/.test(key)) {
+        // 如果 key 以 on 开头，那么说明它是事件
+        el.addEventListener(
+          key.substr(2).toLowerCase(), // 事件名称 onClick ---> click
+          vnode.props[key] // 事件处理函数
+        );
+      }
+    }
+
+    if (Array.isArray(children)) {
+      // 递归地调用 renderer 函数渲染子节点，使用当前元素 el 作为挂载点
+      vnode.children.forEach((child) => renderer(child, el));
+    } else if (typeof children === "string") {
+      el.appendChild(document.createTextNode(children));
+    }
+
+    container.appendChild(el);
+  }
+
+  function mountComponent(vnode, container) {
+    const subtree = vnode.tag.render();
+    mountElement(subtree, container);
+  }
+
+  const MyComponent = {
+    render() {
+      return {
+        tag: "div",
+        props: {
+          onClick: () => console.log("click"),
+        },
+        children: [
+          {
+            tag: "span",
+            props: {
+              onClick: () => alert("children span"),
+            },
+            children: "alert",
+          },
+          // "click me"
+        ],
+      };
+    },
+  };
+
+  const vnode = {
+    tag: MyComponent,
+  };
+
+  renderer(vnode, document.body);
+</script>
